@@ -1,0 +1,11 @@
+-- 为Users表添加头像URL字段
+ALTER TABLE Users ADD COLUMN AvatarURL VARCHAR(255) NULL;
+
+-- 为Movies表添加封面URL字段
+ALTER TABLE Movies ADD COLUMN CoverURL VARCHAR(255) NULL;
+
+-- 为Actors表添加照片URL字段
+ALTER TABLE Actors ADD COLUMN PhotoURL VARCHAR(255) NULL;
+
+-- 为Directors表添加照片URL字段
+ALTER TABLE Directors ADD COLUMN PhotoURL VARCHAR(255) NULL;

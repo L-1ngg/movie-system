@@ -1,0 +1,61 @@
+# Common Node.js files
+# dependencies
+movie-frontend//node_modules
+movie-frontend//.pnp
+movie-frontend/.pnp.*
+movie-frontend/.yarn/*
+movie-frontend/!.yarn/patches
+movie-frontend/!.yarn/plugins
+movie-frontend/!.yarn/releases
+movie-frontend/!.yarn/versions
+
+# testing
+movie-frontend//coverage
+
+# next.js
+movie-frontend//.next/
+movie-frontend//out/
+
+# production
+movie-frontend//build
+
+# misc
+movie-frontend/.DS_Store
+movie-frontend/*.pem
+
+# debug
+movie-frontend/npm-debug.log*
+movie-frontend/yarn-debug.log*
+movie-frontend/yarn-error.log*
+movie-frontend/.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+movie-frontend/.env*
+
+# vercel
+movie-frontend/.vercel
+
+# typescript
+movie-frontend/*.tsbuildinfo
+movie-frontend/next-env.d.ts
+
+# Common Python files
+movie-backend/__pycache__/
+movie-backend/.venv/
+movie-backend/env/ # 如果你的虚拟环境名为 env
+movie-backend/.env
+movie-backend/__pycache__/
+movie-backend/*.py[oc]
+movie-backend/build/
+movie-backend/dist/
+movie-backend/wheels/
+movie-backend/*.egg-info
+
+# VS Code
+movie-system.code-workspace
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

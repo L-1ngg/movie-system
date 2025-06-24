@@ -1,0 +1,143 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List, Annotated
+
+from app.crud import crud_movie
+from app.schemas import movie_schema
+from app.database import get_db
+# 导入我们重构好的管理员验证依赖
+from app.api.v1.dependencies import get_current_admin_user 
+from app.models.user_model import User as UserModel
+
+# 导入上传图片所需模块
+from fastapi import UploadFile, File
+import shutil
+import uuid
+from pathlib import Path
+
+# 导入 Query 和 Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.orm import Session
+from typing import List, Optional
+
+router = APIRouter()
+
+@router.post("/", response_model=movie_schema.MovieRead, status_code=status.HTTP_201_CREATED)
+def create_new_movie(
+    movie: movie_schema.MovieCreate,
+    db: Session = Depends(get_db),
+    admin_user: UserModel = Depends(get_current_admin_user)
+):
+    """
+    创建一个新的电影条目 (需要管理员权限)
+    """
+    return crud_movie.create_movie(db=db, movie=movie)
+
+@router.get("/", response_model=List[movie_schema.MovieRead])
+def read_all_movies(
+    db: Session = Depends(get_db),
+    search: Optional[str] = Query(None, description="按电影名、演员或导演名进行搜索"),
+    genre: Optional[str] = Query(None, description="按类型/流派筛选，例如：剧情"),
+    year: Optional[int] = Query(None, description="按发行年份筛选，例如：1994"),
+    min_rating: Optional[float] = Query(None, ge=0, le=10, description="按最低评分筛选，范围0-10"),
+    skip: int = 0, 
+    limit: int = 100, 
+):
+    """
+    获取电影列表，支持按类型、年份和最低评分进行组合查询。
+    """
+    movies = crud_movie.get_movies(
+        db, 
+        genre=genre, 
+        year=year, 
+        min_rating=min_rating,
+        search=search,
+        skip=skip, 
+        limit=limit
+    )
+    return movies
+
+@router.get("/{movie_id}", response_model=movie_schema.MovieRead)
+def read_single_movie(movie_id: int, db: Session = Depends(get_db)):
+    """
+    获取单个电影的详细信息 (公开访问)
+    """
+    db_movie = crud_movie.get_movie(db, movie_id=movie_id)
+    if db_movie is None:
+        raise HTTPException(status_code=404, detail="电影未找到")
+    return db_movie
+
+@router.put("/{movie_id}", response_model=movie_schema.MovieRead)
+def update_existing_movie(
+    movie_id: int,
+    movie_update: movie_schema.MovieUpdate,
+    db: Session = Depends(get_db),
+    admin_user: UserModel = Depends(get_current_admin_user)
+):
+    """
+    更新一个已存在的电影条目 (需要管理员权限)
+    """
+    db_movie = crud_movie.update_movie(db, movie_id=movie_id, movie_update=movie_update)
+    if db_movie is None:
+        raise HTTPException(status_code=404, detail="电影未找到")
+    return db_movie
+
+@router.delete("/{movie_id}", response_model=movie_schema.MovieRead)
+def delete_existing_movie(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    admin_user: UserModel = Depends(get_current_admin_user)
+):
+    """
+    删除一个电影条目 (需要管理员权限)
+    """
+    db_movie = crud_movie.delete_movie(db, movie_id=movie_id)
+    if db_movie is None:
+        raise HTTPException(status_code=404, detail="电影未找到")
+    return db_movie
+
+@router.post("/{movie_id}/cover", response_model=movie_schema.MovieRead)
+def upload_cover_for_movie(
+    movie_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin_user: UserModel = Depends(get_current_admin_user)
+):
+    """
+    为指定电影上传封面 (需要管理员权限)。
+    如果已有旧封面，会先删除旧封面文件。
+    """
+    db_movie = crud_movie.get_movie(db, movie_id)
+    if not db_movie:
+        raise HTTPException(status_code=404, detail="电影未找到")
+
+    save_dir = Path("static/images/covers")
+    save_dir.mkdir(parents=True, exist_ok=True)
+    
+    file_extension = Path(file.filename).suffix
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    save_path = save_dir / unique_filename
+
+    # 1. 保存新文件
+    try:
+        with open(save_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"无法保存文件: {e}")
+
+    # 2. 删除旧封面 (✨ 新增的逻辑 ✨)
+    if db_movie.CoverURL:
+        # 从相对URL /static/path/to/image.jpg 构造出物理文件路径 static/path/to/image.jpg
+        old_cover_filepath = Path(db_movie.CoverURL.lstrip('/'))
+        if old_cover_filepath.exists():
+            try:
+                old_cover_filepath.unlink() # 删除文件
+                print(f"--- [后端日志] 已成功删除旧封面: {old_cover_filepath} ---")
+            except OSError as e:
+                print(f"--- [后端日志] 删除旧封面失败: {e} ---")
+    
+    # 3. 更新数据库中的URL为新封面的URL
+    cover_url = f"/static/images/covers/{unique_filename}"
+    updated_movie = crud_movie.update_movie_cover(db, movie_id=movie_id, cover_url=cover_url)
+    
+    return updated_movie
