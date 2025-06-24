@@ -21,10 +21,14 @@ class UserRead(UserBase):
     UserID: int
     Role: str
     AvatarURL: Optional[str] = None
-
+    # 这个内嵌类 Pydantic 模型中的配置,用于简化从数据库层到API层的序列化
     class Config:
-        from_attributes = True 
+        from_attributes = True # 开启从对象的属性中读取数据的能力
 
 class UserUpdate(BaseModel):
     Username: Optional[str] = None
     Email: Optional[EmailStr] = None
+
+class UserPasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str

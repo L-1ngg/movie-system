@@ -2,11 +2,11 @@ from sqlalchemy import create_engine, Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = create_engine(settings.DATABASE_URL) # 在底层创建了一个连接池
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) # 从连接池当中借用链接,使用完后归还
 Base = declarative_base()
 
-# ▼▼▼ 新增：将中间表定义移到此处 ▼▼▼
+# 中间表定义
 MovieActors = Table(
     'MovieActors', Base.metadata,
     Column('MovieID', Integer, ForeignKey('Movies.MovieID', ondelete="CASCADE"), primary_key=True),
@@ -18,7 +18,6 @@ MovieDirectors = Table(
     Column('MovieID', Integer, ForeignKey('Movies.MovieID', ondelete="CASCADE"), primary_key=True),
     Column('DirectorID', Integer, ForeignKey('Directors.DirectorID', ondelete="CASCADE"), primary_key=True)
 )
-# ▲▲▲ 新增结束 ▲▲▲
 
 def get_db():
     db = SessionLocal()

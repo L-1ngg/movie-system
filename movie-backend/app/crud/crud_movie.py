@@ -4,6 +4,7 @@ from typing import Optional
 from app.models import movie_model, actor_model, director_model
 from app.schemas import movie_schema
 
+# 从数据库当中返回指定的单部电影信息
 def get_movie(db: Session, movie_id: int):
     return db.query(movie_model.Movie).filter(movie_model.Movie.MovieID == movie_id).first()
 
@@ -21,10 +22,10 @@ def get_movies(
 
     # 2. 如果有搜索词，则应用一个更健壮的筛选条件
     if search:
-        # SQLAlchemy的 relationship().any() 是处理这种“是否存在一个关联对象满足某条件”的最佳方式
-        # 它会生成一个高效的、正确的 EXISTS 子查询，避免了JOIN带来的问题
         search_filter = or_(
-            movie_model.Movie.Title.ilike(f"%{search}%"),
+            # 不区分大小写(insensitive)
+            movie_model.Movie.Title.ilike(f"%{search}%"),  
+            # 远比使用JOIN查询更优，因为JOIN可能会因为一部电影有多个匹配的演员而返回重复的电影记录。
             movie_model.Movie.actors.any(actor_model.Actor.Name.ilike(f"%{search}%")),
             movie_model.Movie.directors.any(director_model.Director.Name.ilike(f"%{search}%"))
         )
@@ -45,6 +46,7 @@ def get_movies(
     return query.distinct().offset(skip).limit(limit).all()
 
 def create_movie(db: Session, movie: movie_schema.MovieCreate):
+    # pydantic的model_dump方法先将schema转换成一个字典对象,再解包为一个model对象
     db_movie = movie_model.Movie(**movie.model_dump())
     db.add(db_movie)
     db.commit()
@@ -56,6 +58,7 @@ def update_movie(db: Session, movie_id: int, movie_update: movie_schema.MovieUpd
     if not db_movie:
         return None
     
+    # 只导出被更改的字段
     update_data = movie_update.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_movie, key, value)

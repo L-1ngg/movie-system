@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from passlib.context import CryptContext
-from jose import JWTError, jwt
+from passlib.context import CryptContext # Python密码哈希库
+from jose import jwt
 from .config import settings
 
-# 密码哈希上下文
+# 密码上下文-哈希算法
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -15,6 +15,8 @@ def get_password_hash(password: str) -> str:
     """生成密码的哈希值"""
     return pwd_context.hash(password)
 
+
+# access-tocken相关 json web token
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """创建JWT访问令牌"""
     to_encode = data.copy()

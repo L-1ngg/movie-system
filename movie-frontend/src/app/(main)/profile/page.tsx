@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
 import {
   getCurrentUser,
   updateCurrentUser,
+  updateUserPassword,
   UserProfile,
   UserProfileUpdateData,
 } from "@/services/api";
@@ -18,6 +19,12 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({ Username: "", Email: "" });
   const [error, setError] = useState("");
   const router = useRouter();
+  // 为密码修改功能新增独立的状态
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -84,6 +91,50 @@ export default function ProfilePage() {
         setError(err.message);
       } else {
         setError("发生未知错误");
+      }
+    }
+  };
+
+  //密码保存
+  const handlePasswordSave = async (e: FormEvent) => {
+    e.preventDefault(); // 阻止表单默认提交行为
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("新密码两次输入不一致");
+      return;
+    }
+    if (!currentPassword || !newPassword) {
+      setPasswordError("所有密码字段均为必填项");
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      setPasswordError("认证失败，请重新登录");
+      return;
+    }
+
+    try {
+      await updateUserPassword(
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+        }
+        // token
+      );
+
+      setPasswordSuccess("密码修改成功！");
+      // 清空密码输入框
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      if (err instanceof Error) {
+        setPasswordError(err.message);
+      } else {
+        setPasswordError("发生了一个未知的错误");
       }
     }
   };
@@ -182,6 +233,58 @@ export default function ProfilePage() {
           )}
           {error && <p className="text-red-500 text-sm mt-4">{error}</p>}
         </div>
+      </div>
+      {/* 修改密码表单 */}
+      <div className="bg-white shadow-md rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-center mb-4">修改密码</h2>
+        <form onSubmit={handlePasswordSave} className="space-y-4">
+          <div>
+            <label className="font-semibold text-gray-600">当前密码:</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full p-1 border rounded mt-1"
+              required
+            />
+          </div>
+          <div>
+            <label className="font-semibold text-gray-600">新密码:</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full p-1 border rounded mt-1"
+              required
+            />
+          </div>
+          <div>
+            <label className="font-semibold text-gray-600">确认新密码:</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full p-1 border rounded mt-1"
+              required
+            />
+          </div>
+          {passwordError && (
+            <p className="text-red-500 text-sm text-center">{passwordError}</p>
+          )}
+          {passwordSuccess && (
+            <p className="text-green-600 text-sm text-center">
+              {passwordSuccess}
+            </p>
+          )}
+          <div className="pt-2">
+            <button
+              type="submit"
+              className="w-full px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              确认修改密码
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

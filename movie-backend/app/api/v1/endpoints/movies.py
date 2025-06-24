@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Annotated
+from typing import List, Optional
 
 from app.crud import crud_movie
 from app.schemas import movie_schema
 from app.database import get_db
-# 导入我们重构好的管理员验证依赖
+
+# 导入管理员验证依赖
 from app.api.v1.dependencies import get_current_admin_user 
 from app.models.user_model import User as UserModel
 
@@ -14,11 +15,6 @@ from fastapi import UploadFile, File
 import shutil
 import uuid
 from pathlib import Path
-
-# 导入 Query 和 Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
-from typing import List, Optional
 
 router = APIRouter()
 
@@ -38,8 +34,8 @@ def read_all_movies(
     db: Session = Depends(get_db),
     search: Optional[str] = Query(None, description="按电影名、演员或导演名进行搜索"),
     genre: Optional[str] = Query(None, description="按类型/流派筛选，例如：剧情"),
-    year: Optional[int] = Query(None, description="按发行年份筛选，例如：1994"),
-    min_rating: Optional[float] = Query(None, ge=0, le=10, description="按最低评分筛选，范围0-10"),
+    year: Optional[int] = Query(None, description="按发行年份筛选,例如:1994"),
+    min_rating: Optional[float] = Query(None, ge=0, le=10, description="按最低评分筛选,范围0-10"),
     skip: int = 0, 
     limit: int = 100, 
 ):
@@ -99,7 +95,7 @@ def delete_existing_movie(
 @router.post("/{movie_id}/cover", response_model=movie_schema.MovieRead)
 def upload_cover_for_movie(
     movie_id: int,
-    file: UploadFile = File(...),
+    file: UploadFile = File(...), # File(...)表明该参数是必须的
     db: Session = Depends(get_db),
     admin_user: UserModel = Depends(get_current_admin_user)
 ):
@@ -114,18 +110,19 @@ def upload_cover_for_movie(
     save_dir = Path("static/images/covers")
     save_dir.mkdir(parents=True, exist_ok=True)
     
-    file_extension = Path(file.filename).suffix
+    # 1.提取文件的扩展名 2.调用uuid库生成唯一标识符并且拼接
+    file_extension = Path(file.filename).suffix 
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     save_path = save_dir / unique_filename
 
-    # 1. 保存新文件
+    # 1. 保存新文件-上下文管理器
     try:
         with open(save_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"无法保存文件: {e}")
 
-    # 2. 删除旧封面 (✨ 新增的逻辑 ✨)
+    # 2. 删除旧封面
     if db_movie.CoverURL:
         # 从相对URL /static/path/to/image.jpg 构造出物理文件路径 static/path/to/image.jpg
         old_cover_filepath = Path(db_movie.CoverURL.lstrip('/'))

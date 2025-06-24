@@ -52,10 +52,43 @@ def read_users_me(current_user: Annotated[UserModel, Depends(get_current_user)])
     获取当前登录用户的信息。
     这是一个受保护的端点。
     """
-    # 不再直接返回数据库模型对象 current_user，
-    # 而是根据 Pydantic 的 UserRead 模式，从 current_user 创建一个新的实例来返回。
-    # 这可以避免 FastAPI 在自动序列化时可能遇到的未知问题。
-    return user_schema.UserRead.from_orm(current_user)
+    return user_schema.UserRead.model_validate(current_user, from_attributes=True)
+
+@router.put("/me", response_model=user_schema.UserRead)
+def update_current_user_info(
+    user_update: user_schema.UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    当前登录用户更新自己的用户名或邮箱。
+    """
+    return crud_user.update_user(db=db, user_id=current_user.UserID, user_update=user_update)
+
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+def update_current_user_password(
+    password_update: user_schema.UserPasswordUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    更新当前认证用户的密码。
+    """
+    success = crud_user.update_user_password(
+        db=db, 
+        user=current_user, 
+        current_password=password_update.current_password, 
+        new_password=password_update.new_password
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="当前密码不正确",
+        )
+    
+    # 成功时，不返回任何内容，仅返回204状态码
+    return
 
 @router.post("/me/avatar", response_model=user_schema.UserRead)
 def upload_avatar_for_current_user(
@@ -74,7 +107,7 @@ def upload_avatar_for_current_user(
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     save_path = save_dir / unique_filename
 
-    # 1. 保存新文件 (已有逻辑)
+    # 1. 保存新文件
     try:
         with open(save_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
@@ -83,7 +116,6 @@ def upload_avatar_for_current_user(
 
     # 2. 删除旧头像 
     if current_user.AvatarURL:
-        # 从相对URL /static/images/avatars/xxxx.jpg 构造出物理文件路径 static/images/avatars/xxxx.jpg
         # lstrip('/') 移除开头的斜杠，以正确拼接路径
         old_avatar_filepath = Path(current_user.AvatarURL.lstrip('/'))
         
@@ -96,22 +128,12 @@ def upload_avatar_for_current_user(
                 # 即使删除失败，也只是打印一个错误，不中断整个上传流程
                 print(f"--- [后端日志] 删除旧头像失败: {e} ---")
     
-    # 3. 更新数据库中的URL为新头像的URL (已有逻辑)
+    # 3. 更新数据库中的URL为新头像的URL
     avatar_url = f"/static/images/avatars/{unique_filename}"
     updated_user = crud_user.update_user_avatar(db, user_id=current_user.UserID, avatar_url=avatar_url)
     
     return updated_user
 
-@router.put("/me", response_model=user_schema.UserRead)
-def update_current_user_info(
-    user_update: user_schema.UserUpdate,
-    db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user)
-):
-    """
-    当前登录用户更新自己的用户名或邮箱。
-    """
-    return crud_user.update_user(db=db, user_id=current_user.UserID, user_update=user_update)
 
 @router.put("/{user_id}", response_model=user_schema.UserRead)
 def update_user_by_id(

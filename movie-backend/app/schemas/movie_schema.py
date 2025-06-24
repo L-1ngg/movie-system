@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional # 类型提示
 
 # 基础模式，包含所有电影共有的字段
 class MovieBase(BaseModel):

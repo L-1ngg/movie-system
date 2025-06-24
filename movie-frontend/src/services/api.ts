@@ -1,5 +1,5 @@
 const API_BASE_URL = "http://127.0.0.1:8000/api/v1";
-
+import { getToken } from "@/lib/auth";
 // ==================================
 // TypeScript 类型定义 (Types)
 // ==================================
@@ -17,6 +17,16 @@ export type UserRegistrationData = {
   Email: string;
   password: string;
 };
+
+export type UserProfileUpdateData = {
+  Username?: string;
+  Email?: string;
+};
+
+export interface UserPasswordUpdate {
+  current_password: string;
+  new_password: string;
+}
 
 export type UserLoginData = {
   email: string;
@@ -52,7 +62,7 @@ type MovieQueryParams = {
   genre?: string;
   year?: number;
   min_rating?: number;
-  search?: string; 
+  search?: string;
 };
 
 export type Actor = {
@@ -93,11 +103,6 @@ export type Comment = {
   UserID: number;
   Content: string;
   CreatedAt: string;
-};
-
-export type UserProfileUpdateData = {
-  Username?: string;
-  Email?: string;
 };
 
 // ==================================
@@ -159,6 +164,32 @@ export const uploadAvatar = async (
     throw new Error(errorData.detail || "上传头像失败");
   }
   return response.json();
+};
+
+export const updateUserPassword = async (
+  payload: UserPasswordUpdate
+): Promise<void> => {
+  const token = getToken();
+  if (!token) throw new Error("No auth token found");
+
+  const response = await fetch(`${API_BASE_URL}/users/me/password`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    // 如果响应状态码不是2xx，尝试解析错误信息
+    const errorData = await response
+      .json()
+      .catch(() => ({ detail: "密码更新失败" }));
+    throw new Error(errorData.detail || "密码更新失败");
+  }
+
+  // 204 No Content 响应没有 body，所以这里不需要解析
 };
 
 // ===== 电影 (Movies) =====
