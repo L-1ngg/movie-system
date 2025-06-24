@@ -1,7 +1,7 @@
 # Common Node.js files
 # dependencies
-movie-frontend//node_modules
-movie-frontend//.pnp
+movie-frontend/node_modules
+movie-frontend/.pnp
 movie-frontend/.pnp.*
 movie-frontend/.yarn/*
 movie-frontend/!.yarn/patches
