@@ -2,16 +2,30 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { Movie, MovieFormData, uploadMovieCover } from "@/services/api";
+import {
+  Movie,
+  MovieCreateData,
+  uploadMovieCover,
+  getActors,
+  getDirectors,
+  Actor,
+  Director,
+} from "@/services/api";
 import { getToken } from "@/lib/auth";
+import Select from "react-select";
 
 const API_ORIGIN = "http://127.0.0.1:8000";
 
 interface MovieFormProps {
   initialData?: Movie | null;
-  onSubmit: (data: MovieFormData) => void;
+  onSubmit: (data: MovieCreateData) => void;
   onCancel: () => void;
   onUploadSuccess: () => void;
+}
+
+interface SelectOption {
+  value: number;
+  label: string;
 }
 
 export default function MovieForm({
@@ -20,7 +34,7 @@ export default function MovieForm({
   onCancel,
   onUploadSuccess,
 }: MovieFormProps) {
-  const [formData, setFormData] = useState<MovieFormData>({
+  const [formData, setFormData] = useState<MovieCreateData>({
     Title: "",
     ReleaseYear: null,
     Genre: "",
@@ -29,12 +43,37 @@ export default function MovieForm({
     Language: "",
     Duration: 0,
   });
+  const [allActors, setAllActors] = useState<SelectOption[]>([]);
+  const [selectedActors, setSelectedActors] = useState<SelectOption[]>([]);
+  const [allDirectors, setAllDirectors] = useState<SelectOption[]>([]);
+  const [selectedDirectors, setSelectedDirectors] = useState<SelectOption[]>(
+    []
+  );
+
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    const fetchArtists = async () => {
+      try {
+        const actorsData = await getActors();
+        setAllActors(
+          actorsData.map((a) => ({ value: a.ActorID, label: a.Name }))
+        );
+
+        const directorsData = await getDirectors();
+        setAllDirectors(
+          directorsData.map((d) => ({ value: d.DirectorID, label: d.Name }))
+        );
+      } catch (error) {
+        console.error("获取演员或导演列表失败", error);
+        setError("获取演员或导演列表失败");
+      }
+    };
+    fetchArtists();
+
     if (initialData) {
       setFormData({
         Title: initialData.Title,
@@ -45,6 +84,19 @@ export default function MovieForm({
         Language: initialData.Language || "",
         Duration: initialData.Duration || 0,
       });
+      if (initialData.actors) {
+        setSelectedActors(
+          initialData.actors.map((a) => ({ value: a.ActorID, label: a.Name }))
+        );
+      }
+      if (initialData.directors) {
+        setSelectedDirectors(
+          initialData.directors.map((d) => ({
+            value: d.DirectorID,
+            label: d.Name,
+          }))
+        );
+      }
     }
   }, [initialData]);
 
@@ -92,7 +144,12 @@ export default function MovieForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    const fullSubmitData: MovieCreateData = {
+      ...formData,
+      actor_ids: selectedActors.map((option) => option.value),
+      director_ids: selectedDirectors.map((option) => option.value),
+    };
+    onSubmit(fullSubmitData);
   };
 
   const currentCoverUrl = initialData?.CoverURL
@@ -171,6 +228,40 @@ export default function MovieForm({
             placeholder="类型"
             className="w-full p-2 border rounded"
           />
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              演员
+            </label>
+            <Select
+              isMulti
+              options={allActors}
+              value={selectedActors}
+              onChange={(options) =>
+                setSelectedActors(options as SelectOption[])
+              }
+              className="mt-1"
+              classNamePrefix="select"
+              placeholder="搜索并选择演员..."
+              noOptionsMessage={() => "没有找到演员"}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              导演
+            </label>
+            <Select
+              isMulti
+              options={allDirectors}
+              value={selectedDirectors}
+              onChange={(options) =>
+                setSelectedDirectors(options as SelectOption[])
+              }
+              className="mt-1"
+              classNamePrefix="select"
+              placeholder="搜索并选择导演..."
+              noOptionsMessage={() => "没有找到导演"}
+            />
+          </div>
           <input
             name="Country"
             value={formData.Country || ""}

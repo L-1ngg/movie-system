@@ -46,14 +46,28 @@ def get_movies(
     return query.distinct().offset(skip).limit(limit).all()
 
 def create_movie(db: Session, movie: movie_schema.MovieCreate):
+    
     # pydantic的model_dump方法先将schema转换成一个字典对象,再解包为一个model对象
-    db_movie = movie_model.Movie(**movie.model_dump())
+    # 1. 将电影基本数据和ID列表分开
+    movie_data = movie.model_dump(exclude={'actor_ids', 'director_ids'})
+    db_movie = movie_model.Movie(**movie_data)
+
     db.add(db_movie)
+    # 2. 根据传入的ID，从数据库中查询出对应的演员和导演对象
+    if movie.actor_ids:
+        actors = db.query(actor_model.Actor).filter(actor_model.Actor.ActorID.in_(movie.actor_ids)).all()
+        db_movie.actors = actors
+        
+    if movie.director_ids:
+        directors = db.query(director_model.Director).filter(director_model.Director.DirectorID.in_(movie.director_ids)).all()
+        db_movie.directors = directors
+    
     db.commit()
     db.refresh(db_movie)
     return db_movie
 
 def update_movie(db: Session, movie_id: int, movie_update: movie_schema.MovieUpdate):
+    # print(f"--- [后端接收到的数据] --- 电影标题: {movie_update.Title}, 演员ID: {movie_update.actor_ids}, 导演ID: {movie_update.director_ids}")
     db_movie = get_movie(db, movie_id)
     if not db_movie:
         return None
@@ -63,6 +77,16 @@ def update_movie(db: Session, movie_id: int, movie_update: movie_schema.MovieUpd
     for key, value in update_data.items():
         setattr(db_movie, key, value)
     
+    # 更新演员关系
+    if movie_update.actor_ids is not None:
+        actors = db.query(actor_model.Actor).filter(actor_model.Actor.ActorID.in_(movie_update.actor_ids)).all()
+        db_movie.actors = actors
+        
+    # 更新导演关系
+    if movie_update.director_ids is not None:
+        directors = db.query(director_model.Director).filter(director_model.Director.DirectorID.in_(movie_update.director_ids)).all()
+        db_movie.directors = directors
+
     db.add(db_movie)
     db.commit()
     db.refresh(db_movie)

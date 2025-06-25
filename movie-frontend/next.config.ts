@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  // 在这里添加 images 配置
+  // 对后端图片的访问授权
   images: {
     remotePatterns: [
       {

@@ -45,9 +45,11 @@ export type Movie = {
   AverageRating: number;
   RatingCount: number;
   CoverURL: string | null;
+  actors: Actor[];
+  directors: Director[];
 };
 
-export type MovieFormData = {
+export type MovieCreateData = {
   Title: string;
   ReleaseYear: number | null;
   Genre: string | null;
@@ -55,7 +57,11 @@ export type MovieFormData = {
   Country?: string;
   Language?: string;
   Duration?: number;
+  actor_ids?: number[];
+  director_ids?: number[];
 };
+
+export type MovieUpdateData = MovieCreateData;
 
 // 定义查询参数的类型，让代码更清晰
 type MovieQueryParams = {
@@ -223,7 +229,7 @@ export const getMovieById = async (id: string): Promise<Movie | null> => {
   return response.json();
 };
 
-export const createMovie = async (movieData: MovieFormData, token: string) => {
+export const createMovie = async (movieData: MovieCreateData, token: string) => {
   const response = await fetch(`${API_BASE_URL}/movies/`, {
     method: "POST",
     headers: {
@@ -238,7 +244,7 @@ export const createMovie = async (movieData: MovieFormData, token: string) => {
 
 export const updateMovie = async (
   movieId: number,
-  movieData: MovieFormData,
+  movieData: MovieCreateData,
   token: string
 ) => {
   const response = await fetch(`${API_BASE_URL}/movies/${movieId}`, {
