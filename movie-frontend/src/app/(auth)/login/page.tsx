@@ -20,16 +20,13 @@ export default function LoginPage() {
 
     try {
       const data = await loginUser({ email, password });
-      // 3. 调用全局的login函数，它会自动保存token并更新状态
+      // 调用全局的login函数，它会自动保存token并更新状态
       login(data.access_token);
       router.push("/");
     } catch (err) {
-      // err 的类型是 unknown
-      // 先判断 err 是否是一个真正的 Error 对象
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        // 如果捕获到的不是Error对象，给一个通用错误信息
         setError("发生了一个未知错误");
       }
     }

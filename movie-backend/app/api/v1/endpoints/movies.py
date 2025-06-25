@@ -36,6 +36,7 @@ def read_all_movies(
     genre: Optional[str] = Query(None, description="按类型/流派筛选，例如：剧情"),
     year: Optional[int] = Query(None, description="按发行年份筛选,例如:1994"),
     min_rating: Optional[float] = Query(None, ge=0, le=10, description="按最低评分筛选,范围0-10"),
+    sort_by: Optional[str] = Query(None, description="排序方式: 'release_year_desc' 或 'rating_desc'"),
     skip: int = 0, 
     limit: int = 100, 
 ):
@@ -48,6 +49,7 @@ def read_all_movies(
         year=year, 
         min_rating=min_rating,
         search=search,
+        sort_by=sort_by,
         skip=skip, 
         limit=limit
     )
@@ -138,3 +140,10 @@ def upload_cover_for_movie(
     updated_movie = crud_movie.update_movie_cover(db, movie_id=movie_id, cover_url=cover_url)
     
     return updated_movie
+
+@router.get("/genres/", response_model=List[str])
+def get_all_genres(db: Session = Depends(get_db)):
+    """
+    获取所有不重复的电影类型列表。
+    """
+    return crud_movie.get_genres(db=db)

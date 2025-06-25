@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
 
+  // 负责在页面加载时进行权限验证和核心数据获取
   useEffect(() => {
     const fetchUser = async () => {
       const token = getToken();
@@ -38,7 +39,6 @@ export default function ProfilePage() {
         const userData = await getCurrentUser(token);
         setUser(userData);
       } catch (err) {
-        // 修复catch块
         console.error(err);
         if (err instanceof Error) {
           setError(err.message);
@@ -46,16 +46,13 @@ export default function ProfilePage() {
         // 获取用户信息失败也可能意味着token无效，跳转到登录页
         router.push("/login");
       } finally {
-        // 确保setLoading被调用
         setLoading(false);
       }
     };
-
-    // 恢复对fetchUser的调用
     fetchUser();
   }, [router]);
 
-  // 当user数据从后端加载后，同步表单的初始数据
+  // 负责监听核心用户数据的变化，并用最新的数据来初始化或更新表单的显示内容
   useEffect(() => {
     if (user) {
       setFormData({ Username: user.Username, Email: user.Email });
@@ -86,7 +83,6 @@ export default function ProfilePage() {
       setIsEditing(false);
       setError("");
     } catch (err) {
-      // 修复catch块
       if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -117,13 +113,10 @@ export default function ProfilePage() {
     }
 
     try {
-      await updateUserPassword(
-        {
-          current_password: currentPassword,
-          new_password: newPassword,
-        }
-        // token
-      );
+      await updateUserPassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
 
       setPasswordSuccess("密码修改成功！");
       // 清空密码输入框
@@ -149,6 +142,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6 md:p-8">
+      {/* 个人信息及修改表单 */}
       <div className="bg-white shadow-md rounded-lg p-6">
         <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6">
           个人中心
@@ -164,6 +158,9 @@ export default function ProfilePage() {
             <>
               <div className="py-2">
                 <label className="font-semibold text-gray-600">用户名:</label>
+                {/**
+                 * 这段代码的核心是创建了一个与 React 状态完全同步的用户名输入框。它通过 value 属性将输入框的显示值与 formData.Username 状态绑定，并通过 onChange 事件监听用户的输入，及时更新 formData.Username 状态
+                 * */}
                 <input
                   type="text"
                   value={formData.Username}
@@ -238,6 +235,8 @@ export default function ProfilePage() {
       <div className="bg-white shadow-md rounded-lg p-6">
         <h2 className="text-xl font-semibold text-center mb-4">修改密码</h2>
         <form onSubmit={handlePasswordSave} className="space-y-4">
+          {/* 表单内容 */}
+          {/* 第一个密码输入框 (当前密码) */}
           <div>
             <label className="font-semibold text-gray-600">当前密码:</label>
             <input
@@ -248,6 +247,7 @@ export default function ProfilePage() {
               required
             />
           </div>
+          {/* 第二个密码输入框 (新密码) */}
           <div>
             <label className="font-semibold text-gray-600">新密码:</label>
             <input
@@ -258,6 +258,7 @@ export default function ProfilePage() {
               required
             />
           </div>
+          {/* 第三个密码输入框 (确认新密码) */}
           <div>
             <label className="font-semibold text-gray-600">确认新密码:</label>
             <input
@@ -268,14 +269,17 @@ export default function ProfilePage() {
               required
             />
           </div>
+          {/* 错误信息显示区域 */}
           {passwordError && (
             <p className="text-red-500 text-sm text-center">{passwordError}</p>
           )}
+          {/* 成功信息显示区域 */}
           {passwordSuccess && (
             <p className="text-green-600 text-sm text-center">
               {passwordSuccess}
             </p>
           )}
+          {/* 提交按钮区域 */}
           <div className="pt-2">
             <button
               type="submit"

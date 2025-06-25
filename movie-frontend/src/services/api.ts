@@ -69,6 +69,7 @@ type MovieQueryParams = {
   year?: number;
   min_rating?: number;
   search?: string;
+  sort_by?: string;
 };
 
 export type Actor = {
@@ -131,14 +132,17 @@ export const registerUser = async (userData: UserRegistrationData) => {
 };
 
 export const loginUser = async (credentials: UserLoginData) => {
+  // 准备请求数据，后端要求是表单形式
   const formData = new URLSearchParams();
   formData.append("username", credentials.email);
   formData.append("password", credentials.password);
+  // 发起 fetch 请求
   const response = await fetch(`${API_BASE_URL}/users/login/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: formData.toString(),
   });
+  //  处理响应
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.detail || "登录失败");
@@ -208,8 +212,7 @@ export const getMovies = async (
 
   // 2. 遍历传入的参数对象，只将有效的值添加到新对象中
   for (const [key, value] of Object.entries(params)) {
-    // 确保值不是 undefined 或 null
-    if (value !== undefined && value !== null) {
+    if (value) {
       // 将所有值都转换为字符串，以满足URLSearchParams的要求
       queryParams[key] = String(value);
     }
@@ -223,13 +226,25 @@ export const getMovies = async (
   return response.json();
 };
 
+export const getGenres = async (): Promise<string[]> => {
+  const response = await fetch(`${API_BASE_URL}/movies/genres/`);
+  if (!response.ok) {
+    console.error("获取类型列表失败");
+    return [];
+  }
+  return response.json();
+};
+
 export const getMovieById = async (id: string): Promise<Movie | null> => {
   const response = await fetch(`${API_BASE_URL}/movies/${id}`);
   if (!response.ok) return null;
   return response.json();
 };
 
-export const createMovie = async (movieData: MovieCreateData, token: string) => {
+export const createMovie = async (
+  movieData: MovieCreateData,
+  token: string
+) => {
   const response = await fetch(`${API_BASE_URL}/movies/`, {
     method: "POST",
     headers: {

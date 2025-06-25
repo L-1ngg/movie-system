@@ -1,15 +1,9 @@
 @import "tailwindcss";
 
+/* 全局变量 */
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -20,7 +14,41 @@
 }
 
 body {
-  background: var(--background);
+  /* 让body的背景变为透明，这样才能“透”出下面的伪元素背景 */
+  background-color: transparent;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== 全新的动态背景实现 ===== */
+
+body::before {
+  /* 创建一个伪元素作为背景层 */
+  content: "";
+  position: fixed; /* 固定定位，使其不随页面滚动 */
+  top: 0;
+  left: 0;
+  width: 100vw; /* 宽度为视窗宽度 */
+  height: 100vh; /* 高度为视窗高度 */
+
+  /* 将其置于所有内容的底层 */
+  z-index: -1;
+
+  /* 应用动态渐变背景 */
+  background: linear-gradient(120deg, #a18cd1, #fbc2eb, #84fab0, #8fd3f4);
+  background-size: 400% 400%;
+  animation: gradient-animation 9s ease infinite;
+}
+
+/* 动画的 @keyframes 保持不变 */
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }

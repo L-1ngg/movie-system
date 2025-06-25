@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
-  // 1. 从 useAuth() 中获取完整的 user 对象和 loading 状态
+  // 从 useAuth() 中获取完整的 user 对象和 loading 状态
   const { user, isLoggedIn, logout, loading } = useAuth();
 
-  // 在加载用户信息时，可以显示一个占位或什么都不显示
+  // 在加载用户信息时，显示一个占位或什么都不显示
   if (loading) {
     return (
       <header className="bg-white shadow-md">
@@ -28,7 +28,7 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             {isLoggedIn && user ? (
               <>
-                {/* 2. 检查用户角色，如果是admin则显示后台管理链接 */}
+                {/* 检查用户角色，如果是admin则显示后台管理链接 */}
                 {user.Role === "admin" && (
                   <Link
                     href="/admin/movies"
@@ -47,7 +47,7 @@ export default function Header() {
                   onClick={logout}
                   className="px-3 py-2 text-gray-700 bg-red-200 rounded hover:bg-red-300"
                 >
-                  退出
+                  注销
                 </button>
               </>
             ) : (

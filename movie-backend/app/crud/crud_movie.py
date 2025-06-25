@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from typing import Optional
+from sqlalchemy import or_, desc, distinct
+from typing import Optional,List
 from app.models import movie_model, actor_model, director_model
 from app.schemas import movie_schema
 
@@ -14,6 +14,7 @@ def get_movies(
     year: Optional[int] = None,
     min_rating: Optional[float] = None,
     search: Optional[str] = None,
+    sort_by: Optional[str] = None,
     skip: int = 0, 
     limit: int = 100
 ):
@@ -41,9 +42,29 @@ def get_movies(
     if min_rating is not None:
         query = query.filter(movie_model.Movie.AverageRating >= min_rating)
 
-    # 4. 最后应用分页和distinct来获取所有结果
+    # 4. 增加排序逻辑
+    if sort_by == "release_year_desc":
+        query = query.order_by(desc(movie_model.Movie.ReleaseYear))
+    elif sort_by == "rating_desc":
+        query = query.order_by(desc(movie_model.Movie.AverageRating))
+    else:
+        # 默认按评分排序
+        query = query.order_by(desc(movie_model.Movie.AverageRating))
+
+    # 5. 最后应用分页和distinct来获取所有结果
     # distinct() 确保在复杂查询中不会返回重复的电影
     return query.distinct().offset(skip).limit(limit).all()
+
+def get_genres(db: Session) -> List[str]:
+    """从数据库中获取所有不重复的电影类型"""
+    # 查找所有不为空的 Genre 字段
+    results = db.query(distinct(movie_model.Movie.Genre)).filter(movie_model.Movie.Genre.isnot(None)).all()
+    genres = set()
+    for (genre_string,) in results:
+        # 将 "剧情/犯罪" 这样的字符串拆分成独立的类型
+        genres.update(g.strip() for g in genre_string.split('/'))
+    # 过滤掉空字符串并排序返回
+    return sorted([genre for genre in genres if genre])
 
 def create_movie(db: Session, movie: movie_schema.MovieCreate):
     

@@ -67,12 +67,12 @@ def update_user_password(db: Session, *, user: user_model.User, current_password
     验证用户当前密码，如果正确，则更新为新密码。
     """
     # 1. 验证当前密码是否正确
-    if not security.verify_password(current_password, user.HashedPassword):
+    if not security.verify_password(current_password, user.PasswordHash):
         return False
     
     # 2. 如果正确，则哈希新密码并更新
     hashed_password = security.get_password_hash(new_password)
-    user.HashedPassword = hashed_password
+    user.PasswordHash = hashed_password
     db.add(user)
     db.commit()
     return True
