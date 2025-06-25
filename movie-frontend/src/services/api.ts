@@ -104,12 +104,17 @@ export type DirectorFormData = {
   Nationality: string | null;
 };
 
+export type UserInComment = {
+  UserID: number;
+  Username: string;
+};
+
 export type Comment = {
   CommentID: number;
-  MovieID: number;
-  UserID: number;
   Content: string;
   CreatedAt: string;
+  MovieID: number;
+  user: UserInComment;
 };
 
 // ==================================

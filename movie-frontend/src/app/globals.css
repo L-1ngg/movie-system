@@ -15,30 +15,28 @@
 
 body {
   /* 让body的背景变为透明，这样才能“透”出下面的伪元素背景 */
-  background-color: transparent;
+  /* background-color: transparent; */
+  background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 /* ===== 全新的动态背景实现 ===== */
 
-body::before {
-  /* 创建一个伪元素作为背景层 */
+/* body::before {
   content: "";
-  position: fixed; /* 固定定位，使其不随页面滚动 */
+  position: fixed; 
   top: 0;
   left: 0;
-  width: 100vw; /* 宽度为视窗宽度 */
-  height: 100vh; /* 高度为视窗高度 */
+  width: 100vw;
+  height: 100vh; 
 
-  /* 将其置于所有内容的底层 */
   z-index: -1;
 
-  /* 应用动态渐变背景 */
   background: linear-gradient(120deg, #a18cd1, #fbc2eb, #84fab0, #8fd3f4);
   background-size: 400% 400%;
   animation: gradient-animation 9s ease infinite;
-}
+} */
 
 /* 动画的 @keyframes 保持不变 */
 @keyframes gradient-animation {

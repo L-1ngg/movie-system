@@ -10,24 +10,43 @@ from app.models.user_model import User as UserModel
 
 router = APIRouter()
 
-@router.post("/movies/{movie_id}/comments", response_model=comment_schema.CommentRead, status_code=status.HTTP_201_CREATED)
+# 为电影添加新评论
+@router.post(
+    "/movies/{movie_id}/comments",
+    response_model=comment_schema.CommentRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="为电影添加新评论"
+)
 def create_comment_for_movie(
     movie_id: int,
     comment: comment_schema.CommentCreate,
     db: Session = Depends(get_db),
-    current_user: UserModel = Depends(get_current_user)
+    current_user: UserModel = Depends(get_current_user),
 ):
     """
-    为指定电影创建一条新评论 (需要用户登录)
+    为指定电影添加一条新评论。需要用户登录。
     """
-    return crud_comment.create_comment(db=db, comment=comment, user_id=current_user.UserID, movie_id=movie_id)
+    return crud_comment.create_comment(
+        db=db, comment=comment, user_id=current_user.UserID, movie_id=movie_id
+    )
 
-@router.get("/movies/{movie_id}/comments", response_model=List[comment_schema.CommentRead])
-def read_comments_for_movie(movie_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+# 获取单个电影的所有评论
+@router.get(
+    "/movies/{movie_id}/comments",
+    response_model=List[comment_schema.CommentRead],
+    summary="获取电影的评论列表"
+)
+def read_comments_for_movie(
+    movie_id: int, 
+    db: Session = Depends(get_db), 
+    skip: int = 0, 
+    limit: int = 100
+):
     """
-    读取指定电影的所有评论 (公开访问)
+    根据电影ID获取所有评论，支持分页。
     """
-    return crud_comment.get_comments_by_movie(db=db, movie_id=movie_id, skip=skip, limit=limit)
+    comments = crud_comment.get_comments_by_movie(db=db, movie_id=movie_id, skip=skip, limit=limit)
+    return comments
 
 @router.put("/comments/{comment_id}", response_model=comment_schema.CommentRead)
 def update_user_comment(

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getToken } from "@/lib/auth";
 import { postComment, Comment } from "@/services/api";
+import { FormattedDate } from "./FormattedDate";
 
 interface CommentSectionProps {
   movieId: string;
@@ -81,8 +82,8 @@ export default function CommentSection({
           <div key={comment.CommentID} className="p-4 bg-gray-100 rounded-lg">
             <p>{comment.Content}</p>
             <p className="text-xs text-gray-500 mt-2">
-              用户 {comment.UserID} 发表于{" "}
-              {new Date(comment.CreatedAt).toLocaleString()}
+              用户 {comment.user.Username}发表于{" "}
+              <FormattedDate dateString={comment.CreatedAt} />
             </p>
           </div>
         ))}

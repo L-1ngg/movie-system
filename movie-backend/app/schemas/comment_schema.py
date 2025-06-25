@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
@@ -13,9 +14,12 @@ class CommentUpdate(BaseModel):
 
 class CommentRead(CommentBase):
     CommentID: int
-    MovieID: int
-    UserID: int
     CreatedAt: datetime
+    
+    user: Optional["user_schema.UserInComment"] = None
 
     class Config:
         from_attributes = True
+
+from . import user_schema
+CommentRead.model_rebuild()
