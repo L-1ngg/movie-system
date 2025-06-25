@@ -25,9 +25,14 @@ def register_user(user: user_schema.UserCreate, db: Session = Depends(get_db)):
     """
     用户注册
     """
-    db_user = crud_user.get_user_by_email(db, email=user.Email)
+    db_user = crud_user.get_user_by_username_or_email(db, username=user.Username, email=user.Email)
+
     if db_user:
-        raise HTTPException(status_code=400, detail="该邮箱已被注册")
+        # 判断到底是哪个字段重复了，并返回更具体的错误信息
+        if db_user.Username == user.Username:
+            raise HTTPException(status_code=400, detail="该用户名已被注册")
+        if db_user.Email == user.Email:
+            raise HTTPException(status_code=400, detail="该邮箱已被注册")
     created_user = crud_user.create_user(db=db, user=user)
     return created_user
 
