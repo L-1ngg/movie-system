@@ -2,7 +2,8 @@ from sqlalchemy import create_engine, Table, Column, Integer, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL) # 在底层创建了一个连接池
+connect_args = {"init_command": "SET time_zone = '+8:00'"}
+engine = create_engine(settings.DATABASE_URL,connect_args=connect_args) # 在底层创建了一个连接池
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) # 从连接池当中借用链接,使用完后归还
 Base = declarative_base()
 

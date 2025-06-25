@@ -6,6 +6,15 @@ import { getToken } from "@/lib/auth";
 import { postComment, Comment } from "@/services/api";
 import { FormattedDate } from "./FormattedDate";
 
+const dateTimeFormatter = new Intl.DateTimeFormat("zh-CN", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+  hour12: false, // 使用24小时制
+});
+
 interface CommentSectionProps {
   movieId: string;
   initialComments: Comment[];
@@ -83,7 +92,7 @@ export default function CommentSection({
             <p>{comment.Content}</p>
             <p className="text-xs text-gray-500 mt-2">
               用户 {comment.user.Username}发表于{" "}
-              <FormattedDate dateString={comment.CreatedAt} />
+              {dateTimeFormatter.format(new Date(comment.CreatedAt))}
             </p>
           </div>
         ))}
