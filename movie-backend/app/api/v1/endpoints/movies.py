@@ -6,6 +6,9 @@ from app.crud import crud_movie
 from app.schemas import movie_schema
 from app.database import get_db
 
+from app.crud.crud_view import movie_view
+from app.schemas.view_schemas import MovieDetails
+
 # 导入管理员验证依赖
 from app.api.v1.dependencies import get_current_admin_user 
 from app.models.user_model import User as UserModel
@@ -54,6 +57,28 @@ def read_all_movies(
         limit=limit
     )
     return movies
+
+@router.get("/{movie_id}/details", response_model=MovieDetails)
+def read_movie_details(
+    *,
+    db: Session = Depends(get_db),
+    movie_id: int,
+):
+    """
+    获取一部电影的完整详细信息 (通过视图 V_MovieDetails)。
+    包括电影本身信息、演员列表和导演列表。
+    """
+   
+    movie_details = movie_view.get_details(db=db, movie_id=movie_id)
+
+    if not movie_details:
+        raise HTTPException(
+            status_code=404,
+            detail="Movie with this ID not found",
+        )
+
+    # FastAPI 会自动使用 MovieDetailsSchema 将返回的 ORM 对象序列化为 JSON
+    return movie_details
 
 @router.get("/{movie_id}", response_model=movie_schema.MovieRead)
 def read_single_movie(movie_id: int, db: Session = Depends(get_db)):

@@ -8,7 +8,6 @@ from pathlib import Path  # 2. 导入Path模块
 from app.api.v1 import api
 from app.database import Base, engine
 
-# 这部分代码保持不变
 ROOT_DIR = Path(__file__).resolve().parent.parent
 
 app = FastAPI(title="电影评分系统 API")
@@ -16,11 +15,12 @@ app = FastAPI(title="电影评分系统 API")
 # 定义允许访问的源列表
 # Access-Control-Allow-Origin
 origins = [
-    "http://localhost",
-    "http://localhost:3000",
+    # "http://localhost",
+    # "http://localhost:3000",
+    "*"
 ]
 
-# 添加CORS(跨资源共享)中间件到你的应用实例
+# 添加CORS(跨资源共享)中间件到应用实例
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,  # 允许访问的源

@@ -71,7 +71,7 @@ CREATE TABLE Comments (
 CREATE TABLE Ratings (
     UserID INT NOT NULL,
     MovieID INT NOT NULL,
-    Score INT NOT NULL, -- 假设评分为1-10的整数
+    Score INT NOT NULL, -- 评分为1-10的整数
     CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (UserID, MovieID), -- 复合主键，确保一个用户对一部电影只能评一次分
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,

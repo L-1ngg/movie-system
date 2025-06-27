@@ -2,7 +2,6 @@
 DELIMITER $$
 
 CREATE PROCEDURE SP_AddNewMovieWithDetails(
-    -- 输入参数
     IN p_MovieTitle VARCHAR(255),
     IN p_MovieSynopsis TEXT,
     IN p_ReleaseYear INT,
@@ -12,14 +11,10 @@ CREATE PROCEDURE SP_AddNewMovieWithDetails(
 BEGIN
     -- 声明变量
     DECLARE v_MovieID INT;
-
     -- 声明一个退出处理器，用于在发生错误时自动回滚
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
-        -- 发生错误，回滚事务
         ROLLBACK;
-        -- 可以选择性地发出一个错误信号
-        -- RESIGNAL;
     END;
 
     -- 开启事务
